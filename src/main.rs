@@ -1,4 +1,4 @@
-use std::{error::Error, net::{SocketAddr, TcpListener, TcpStream}};
+use std::{error::Error, io::{BufRead, BufReader}, net::{SocketAddr, TcpListener, TcpStream}};
 
 fn main() -> Result<(), Box<dyn Error>> {
     let listener: TcpListener = TcpListener::bind("127.0.0.1:8080")?;
@@ -16,6 +16,16 @@ fn main() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn handle_connection(_stream: TcpStream, addr: SocketAddr) {
+fn handle_connection(stream: TcpStream, addr: SocketAddr) {
     println!("Handling connection for address: {addr}");
+    let mut buf: String = String::new();
+    let mut reader: BufReader<TcpStream> = BufReader::new(stream);
+    let n_bytes = reader.read_line(&mut buf).unwrap();
+    if n_bytes == 0 as usize {
+        println!("0 bytes read from from stream!");
+        return;
+    }
+
+
+    dbg!(&buf.trim());
 }
