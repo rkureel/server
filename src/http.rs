@@ -1,5 +1,7 @@
 use std::{io::{BufRead, BufReader}, net::{SocketAddr, TcpListener, TcpStream}};
 
+use log4rs::{append::console::ConsoleAppender, config::{Appender, Root}, Config};
+
 use crate::server::Server;
 
 const ADDRESS: &str = "127.0.0.1";
@@ -13,12 +15,24 @@ impl HttpServer {
     pub fn new() -> Self {
         return HttpServer {};
     }
+
+    fn init_logger(&self) {
+        let stdout: ConsoleAppender = ConsoleAppender::builder().build();
+        let config = Config::builder()
+            .appender(Appender::builder().build("stdout", Box::new(stdout)))
+            .build(Root::builder().appender("stdout").build(log::LevelFilter::Debug))
+            .unwrap();
+
+        let _handle = log4rs::init_config(config).unwrap();
+    }
 }
 
 impl Server for HttpServer {
     fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
+        self.init_logger();
+
         let address: String = format!("{ADDRESS}:{PORT}");
-        println!("Starting server on: [{address}]");
+        log::info!("Starting server on: [{address}]");
 
         let listener: TcpListener = TcpListener::bind("127.0.0.1:8080")?;
         
@@ -35,18 +49,18 @@ impl Server for HttpServer {
     }
 
     fn shutdown(&self) -> Result<(), Box<dyn std::error::Error>> {
-        println!("Shutting down server");
+        log::info!("Shutting down server");
         Ok(())
     }
 }
 
 fn handle_connection(stream: TcpStream, addr: SocketAddr) {
-    println!("Handling connection for address: {addr}");
+    log::info!("Handling connection for address: {addr}");
     let mut buf: String = String::new();
     let mut reader: BufReader<TcpStream> = BufReader::new(stream);
     let n_bytes = reader.read_line(&mut buf).unwrap();
     if n_bytes == 0 as usize {
-        println!("0 bytes read from from stream!");
+        log::debug!("0 bytes read from from stream!");
         return;
     }
 
