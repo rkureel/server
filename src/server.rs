@@ -1,3 +1,5 @@
+pub mod config;
+
 use std::error::Error;
 
 pub trait Server {

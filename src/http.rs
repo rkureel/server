@@ -1,40 +1,30 @@
 use std::{io::{BufRead, BufReader}, net::{SocketAddr, TcpListener, TcpStream}};
+use log::debug;
 
-use log4rs::{append::console::ConsoleAppender, config::{Appender, Root}, Config};
+use crate::server::{config::ServerConfig, Server};
 
-use crate::server::Server;
-
-const ADDRESS: &str = "127.0.0.1";
-const PORT: &str = "8080";
 
 pub struct HttpServer {
-
+    server_config: ServerConfig
 }
 
 impl HttpServer {
-    pub fn new() -> Self {
-        return HttpServer {};
+    pub fn new(server_config: ServerConfig) -> Self {
+        return HttpServer {
+            server_config: server_config
+        };
     }
 
-    fn init_logger(&self) {
-        let stdout: ConsoleAppender = ConsoleAppender::builder().build();
-        let config = Config::builder()
-            .appender(Appender::builder().build("stdout", Box::new(stdout)))
-            .build(Root::builder().appender("stdout").build(log::LevelFilter::Debug))
-            .unwrap();
-
-        let _handle = log4rs::init_config(config).unwrap();
-    }
+    
 }
 
 impl Server for HttpServer {
     fn start(&self) -> Result<(), Box<dyn std::error::Error>> {
-        self.init_logger();
 
-        let address: String = format!("{ADDRESS}:{PORT}");
+        let address: String = self.server_config.get_address();
         log::info!("Starting server on: [{address}]");
 
-        let listener: TcpListener = TcpListener::bind("127.0.0.1:8080")?;
+        let listener: TcpListener = TcpListener::bind(&address)?;
         
         loop {
             match listener.accept() {
@@ -63,7 +53,4 @@ fn handle_connection(stream: TcpStream, addr: SocketAddr) {
         log::debug!("0 bytes read from from stream!");
         return;
     }
-
-
-    dbg!(&buf.trim());
 }
