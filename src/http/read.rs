@@ -1,10 +1,9 @@
 use std::{
     error::Error,
     io::{BufRead, BufReader, Read},
-    str::FromStr,
 };
 
-use crate::http::models::{HttpMethod, HttpRequest};
+use crate::http::models::{HttpMethod, HttpRequest, errors::HttpRequestParsingError};
 
 pub fn read_request<T: Read>(stream: &mut T) -> Result<HttpRequest, Box<dyn Error>> {
     let mut reader: BufReader<&mut T> = BufReader::new(stream);
@@ -20,7 +19,7 @@ pub fn read_request<T: Read>(stream: &mut T) -> Result<HttpRequest, Box<dyn Erro
 
 fn parse_request_line<T: BufRead>(
     reader: &mut T,
-) -> Result<(HttpMethod, String, String), Box<dyn Error>> {
+) -> Result<(HttpMethod, String, String), HttpRequestParsingError> {
     let mut request_line: String = String::new();
     reader.read_line(&mut request_line)?;
 
@@ -28,11 +27,11 @@ fn parse_request_line<T: BufRead>(
 
     let (method, path, protocol) = match (parts.next(), parts.next(), parts.next()) {
         (Some(m), Some(pa), Some(pr)) => (m, pa, pr),
-        _ => return Err("Invalid request line".into()),
+        _ => return Err(HttpRequestParsingError::InvalidRequestLine(request_line)),
     };
 
     return Ok((
-        HttpMethod::from_str(method),
+        HttpMethod::from_str(method)?,
         path.to_owned(),
         protocol.to_owned(),
     ));

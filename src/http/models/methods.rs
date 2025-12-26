@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use crate::http::models::errors::HttpRequestParsingError;
+
 #[derive(Debug, PartialEq)]
 pub enum HttpMethod {
     GET,
@@ -14,18 +16,18 @@ pub enum HttpMethod {
 }
 
 impl HttpMethod {
-    pub fn from_str(s: &str) -> Self {
+    pub fn from_str(s: &str) -> Result<Self, HttpRequestParsingError> {
         match s {
-            "GET" => HttpMethod::GET,
-            "HEAD" => HttpMethod::HEAD,
-            "OPTIONS" => HttpMethod::OPTIONS,
-            "TRACE" => HttpMethod::TRACE,
-            "PUT" => HttpMethod::PUT,
-            "DELETE" => HttpMethod::DELETE,
-            "POST" => HttpMethod::POST,
-            "PATCH" => HttpMethod::PATCH,
-            "CONNECT" => HttpMethod::CONNECT,
-            other => panic!("Invalid Http method: {other}"),
+            "GET" => Ok(HttpMethod::GET),
+            "HEAD" => Ok(HttpMethod::HEAD),
+            "OPTIONS" => Ok(HttpMethod::OPTIONS),
+            "TRACE" => Ok(HttpMethod::TRACE),
+            "PUT" => Ok(HttpMethod::PUT),
+            "DELETE" => Ok(HttpMethod::DELETE),
+            "POST" => Ok(HttpMethod::POST),
+            "PATCH" => Ok(HttpMethod::PATCH),
+            "CONNECT" => Ok(HttpMethod::CONNECT),
+            other => Err(HttpRequestParsingError::InvalidHttpMethod(other.to_owned())),
         }
     }
 }
