@@ -1,7 +1,7 @@
 use std::{
     error::Error,
     io::{BufRead, BufReader, Read},
-    str::SplitAsciiWhitespace,
+    str::FromStr,
 };
 
 use crate::http::models::{HttpMethod, HttpRequest};
@@ -24,9 +24,45 @@ fn parse_request_line<T: BufRead>(
     let mut request_line: String = String::new();
     reader.read_line(&mut request_line)?;
 
-    let mut request_line_iter = request_line.split_whitespace();
-    let method: HttpMethod = HttpMethod::from_str(&request_line_iter.next().unwrap());
-    let request_path = String::from(request_line_iter.next().unwrap());
-    let protocol = String::from(request_line_iter.next().unwrap());
-    return Ok((method, request_path, protocol));
+    let mut parts = request_line.split_whitespace();
+
+    let (method, path, protocol) = match (parts.next(), parts.next(), parts.next()) {
+        (Some(m), Some(pa), Some(pr)) => (m, pa, pr),
+        _ => return Err("Invalid request line".into()),
+    };
+
+    return Ok((
+        HttpMethod::from_str(method),
+        path.to_owned(),
+        protocol.to_owned(),
+    ));
+}
+
+#[cfg(test)]
+mod tests {
+    use std::io::BufReader;
+
+    use crate::http::{models::HttpMethod, read::parse_request_line};
+
+    #[test]
+    fn successfully_parse_valid_request_line() {
+        let request_line = "GET / HTTP/1.1";
+        let mut reader = BufReader::new(request_line.as_bytes());
+        let result = parse_request_line(&mut reader);
+
+        assert!(result.is_ok());
+        let (method, path, protocol) = result.unwrap();
+        assert_eq!(method, HttpMethod::GET);
+        assert_eq!(path, "/");
+        assert_eq!(protocol, "HTTP/1.1");
+    }
+
+    #[test]
+    fn return_error_for_invalid_request_line() {
+        let request_line = "GET";
+        let mut reader = BufReader::new(request_line.as_bytes());
+        let result = parse_request_line(&mut reader);
+
+        assert!(result.is_err());
+    }
 }
